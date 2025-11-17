@@ -1,0 +1,125 @@
+version: '3.8'
+
+services:
+  # Infrastructure
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - voltstream
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+    networks:
+      - voltstream
+
+  influxdb:
+    image: influxdb:2.7
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: voltstream2024
+      DOCKER_INFLUXDB_INIT_ORG: voltstream
+      DOCKER_INFLUXDB_INIT_BUCKET: telemetry
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: voltstream-token-2024
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    networks:
+      - voltstream
+
+  # VoltStream Services
+  grpc-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    environment:
+      GRPC_PORT: ":50051"
+      KAFKA_BROKER: kafka:9092
+      KAFKA_TOPIC: telemetry-raw
+    ports:
+      - "50051:50051"
+      - "2112:2112"
+    depends_on:
+      - kafka
+    networks:
+      - voltstream
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_TOPIC: telemetry-raw
+      INFLUXDB_URL: http://influxdb:8086
+      INFLUXDB_TOKEN: voltstream-token-2024
+      INFLUXDB_ORG: voltstream
+      INFLUXDB_BUCKET: telemetry
+    depends_on:
+      - kafka
+      - influxdb
+    networks:
+      - voltstream
+
+  alert-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.alert-worker
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_TOPIC: telemetry-raw
+      KAFKA_ALERT_TOPIC: telemetry-alerts
+    depends_on:
+      - kafka
+    networks:
+      - voltstream
+
+  simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.simulator
+    environment:
+      NUM_VEHICLES: 1000
+      SEND_FREQUENCY_HZ: 10
+    depends_on:
+      - grpc-server
+    networks:
+      - voltstream
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    environment:
+      KAFKA_BROKER: kafka:9092
+      KAFKA_TOPIC: telemetry-raw
+      KAFKA_ALERT_TOPIC: telemetry-alerts
+    ports:
+      - "3000:3000"
+    depends_on:
+      - kafka
+    networks:
+      - voltstream
+
+volumes:
+  influxdb-data:
+
+networks:
+  voltstream:
+    driver: bridge

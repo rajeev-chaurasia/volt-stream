@@ -1,0 +1,12 @@
+bin/
+*.log
+.env
+.env.local
+node_modules/
+.next/
+dashboard-ui/.env.local
+dashboard-ui/node_modules/
+dashboard-ui/.next/
+.DS_Store
+*.swp
+*.swo

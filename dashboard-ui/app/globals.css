@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --volt-cyan: #22d3ee;
+  --volt-blue: #3b82f6;
+  --volt-dark: #0f172a;
+  --volt-slate: #1e293b;
+}
+
+body {
+  @apply bg-slate-900 text-slate-100 overflow-hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Leaflet override for dark theme */
+.leaflet-container {
+  background: #1e293b;
+}
+
+.leaflet-pane {
+  filter: brightness(0.8) contrast(1.2);
+}
+
+.leaflet-control {
+  filter: brightness(1.2);
+}

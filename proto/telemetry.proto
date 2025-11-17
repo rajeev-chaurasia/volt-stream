@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package telemetry;
+option go_package = "github.com/rajeev-chaurasia/voltstream/proto";
+
+service TelemetryService {
+  // Bi-directional streaming for real-time data & server commands
+  rpc StreamTelemetry(stream TelemetryBatch) returns (stream ServerAck);
+}
+
+message TelemetryBatch {
+  string vehicle_id = 1;       // VIN (e.g., RVN123456789)
+  int64 timestamp = 2;         // Unix Epoch Milliseconds
+  repeated DataPoint points = 3;
+}
+
+message DataPoint {
+  // VSS Standard Paths
+  // Ex: "Vehicle.Speed", "Vehicle.Powertrain.TractionBattery.Temperature.Average"
+  string sensor_id = 1; 
+  double value = 2;
+}
+
+message ServerAck {
+  bool success = 1;
+  string error_message = 2;
+  int32 processing_time_ms = 3; // Useful for client-side lag monitoring
+}
