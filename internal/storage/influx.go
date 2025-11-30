@@ -6,6 +6,7 @@ import (
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
+	"github.com/influxdata/influxdb-client-go/v2/api/write"
 	pb "github.com/rajeev-chaurasia/voltstream/proto"
 )
 
@@ -48,6 +49,6 @@ func (s *InfluxStore) Close() {
 	s.client.Close()
 }
 
-func (s *InfluxStore) WritePoint(p *influxdb2.Point) error {
+func (s *InfluxStore) WritePoint(p *write.Point) error {
 	return s.writeAPI.WritePoint(context.Background(), p)
 }
