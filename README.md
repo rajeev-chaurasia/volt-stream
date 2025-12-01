@@ -10,11 +10,6 @@ High-performance vehicle telemetry ingestion and monitoring system demonstrating
 
 **Production Dashboard:** [voltstream.vercel.app](https://voltstream.vercel.app)  
 > ⚠️ **Note:** Live demo runs in **simulation mode** with realistic SF Bay Area vehicle data for zero-cost deployment
-
-**GitHub:** [github.com/rajeev-chaurasia/volt-stream](https://github.com/rajeev-chaurasia/volt-stream)
-
-**Demo Video:** [Full System Running (Coming Soon)](#)
-
 ---
 
 ## 🎯 Two Deployment Modes
@@ -210,17 +205,7 @@ The dashboard will be live at `your-project.vercel.app` with realistic simulated
 
 ---
 
-## License
-
-MIT
-
-## Author
-
-Rajeev Chaurasia  
-- GitHub: [@rajeev-chaurasia](https://github.com/rajeev-chaurasia)
-- Email: rajeevchaurasia.dev@gmail.com
-
-For detailed production setup with Docker and Kubernetes:
+For detailed production setup with Docker:
 
 ```bash
 docker-compose -f docker-compose.prod.yml up -d
