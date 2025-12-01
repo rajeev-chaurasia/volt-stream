@@ -1,10 +1,9 @@
 module github.com/rajeev-chaurasia/voltstream
 
-go 1.25.4
+go 1.24.0
 
 require (
 	github.com/IBM/sarama v1.46.3
-	github.com/gorilla/websocket v1.5.3
 	github.com/influxdata/influxdb-client-go/v2 v2.14.0
 	github.com/prometheus/client_golang v1.23.2
 	google.golang.org/grpc v1.77.0
