@@ -14,14 +14,15 @@ ENV ZOOKEEPER_CLIENT_PORT=2181 \
     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
     KAFKA_HEAP_OPTS="-Xmx256M -Xms128M"
 
-# Create startup script
-RUN echo '#!/bin/bash\n\
-zookeeper-server-start /etc/kafka/zookeeper.properties &\n\
-sleep 10\n\
-kafka-server-start /etc/kafka/server.properties\n\
-' > /start.sh && chmod +x /start.sh
+# Create startup script in /tmp which has write permissions
+RUN mkdir -p /tmp && \
+    echo '#!/bin/bash' > /tmp/start.sh && \
+    echo 'zookeeper-server-start /etc/kafka/zookeeper.properties &' >> /tmp/start.sh && \
+    echo 'sleep 10' >> /tmp/start.sh && \
+    echo 'kafka-server-start /etc/kafka/server.properties' >> /tmp/start.sh && \
+    chmod +x /tmp/start.sh
 
-# Health check endpoint
-EXPOSE 9092 2181 8080
+# Expose ports
+EXPOSE 9092 2181
 
-CMD ["/start.sh"]
+CMD ["/tmp/start.sh"]
