@@ -51,8 +51,8 @@ services:
       - key: KAFKA_TOPIC
         value: telemetry-raw
 
-  # Storage Worker
-  - type: worker
+  # Storage Worker (as web service for free tier)
+  - type: web
     name: voltstream-worker
     env: go
     buildCommand: go build -o bin/worker ./cmd/worker
@@ -76,8 +76,8 @@ services:
       - key: INFLUXDB_BUCKET
         value: telemetry
 
-  # Alert Worker
-  - type: worker
+  # Alert Worker (as web service for free tier)
+  - type: web
     name: voltstream-alert-worker
     env: go
     buildCommand: go build -o bin/alert-worker ./cmd/alert-worker
@@ -94,8 +94,8 @@ services:
       - key: KAFKA_ALERT_TOPIC
         value: telemetry-alerts
 
-  # Simulator (optional - can run locally)
-  - type: worker
+  # Simulator (as web service for free tier, optional - can run locally)
+  - type: web
     name: voltstream-simulator
     env: go
     buildCommand: go build -o bin/simulator ./cmd/simulator
