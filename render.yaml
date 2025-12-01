@@ -1,0 +1,113 @@
+services:
+  # Kafka + Zookeeper (combined for simplicity)
+  - type: web
+    name: voltstream-kafka
+    env: docker
+    dockerfilePath: ./Dockerfile.kafka-combined
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: KAFKA_HEAP_OPTS
+        value: "-Xmx256M -Xms128M"
+
+  # InfluxDB
+  - type: web
+    name: voltstream-influxdb
+    env: docker
+    dockerCommand: influxd
+    dockerContext: .
+    dockerfilePath: ./Dockerfile.influxdb
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DOCKER_INFLUXDB_INIT_MODE
+        value: setup
+      - key: DOCKER_INFLUXDB_INIT_USERNAME
+        value: admin
+      - key: DOCKER_INFLUXDB_INIT_PASSWORD
+        value: voltstream2024
+      - key: DOCKER_INFLUXDB_INIT_ORG
+        value: voltstream
+      - key: DOCKER_INFLUXDB_INIT_BUCKET
+        value: telemetry
+      - key: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+        value: voltstream-token-free-tier
+
+  # gRPC Server
+  - type: web
+    name: voltstream-grpc
+    env: go
+    buildCommand: go build -o bin/server ./cmd/server
+    startCommand: ./bin/server
+    plan: free
+    envVars:
+      - key: GRPC_PORT
+        value: ":50051"
+      - key: KAFKA_BROKER
+        fromService:
+          type: web
+          name: voltstream-kafka
+          property: hostport
+      - key: KAFKA_TOPIC
+        value: telemetry-raw
+
+  # Storage Worker
+  - type: worker
+    name: voltstream-worker
+    env: go
+    buildCommand: go build -o bin/worker ./cmd/worker
+    startCommand: ./bin/worker
+    plan: free
+    envVars:
+      - key: KAFKA_BROKER
+        fromService:
+          type: web
+          name: voltstream-kafka
+          property: hostport
+      - key: INFLUXDB_URL
+        fromService:
+          type: web
+          name: voltstream-influxdb
+          property: host
+      - key: INFLUXDB_TOKEN
+        value: voltstream-token-free-tier
+      - key: INFLUXDB_ORG
+        value: voltstream
+      - key: INFLUXDB_BUCKET
+        value: telemetry
+
+  # Alert Worker
+  - type: worker
+    name: voltstream-alert-worker
+    env: go
+    buildCommand: go build -o bin/alert-worker ./cmd/alert-worker
+    startCommand: ./bin/alert-worker
+    plan: free
+    envVars:
+      - key: KAFKA_BROKER
+        fromService:
+          type: web
+          name: voltstream-kafka
+          property: hostport
+      - key: KAFKA_TOPIC
+        value: telemetry-raw
+      - key: KAFKA_ALERT_TOPIC
+        value: telemetry-alerts
+
+  # Simulator (optional - can run locally)
+  - type: worker
+    name: voltstream-simulator
+    env: go
+    buildCommand: go build -o bin/simulator ./cmd/simulator
+    startCommand: ./bin/simulator
+    plan: free
+    envVars:
+      - key: NUM_VEHICLES
+        value: "50"
+      - key: SEND_FREQUENCY_HZ
+        value: "2"
+      - key: SERVER_ADDR
+        fromService:
+          type: web
+          name: voltstream-grpc
+          property: hostport
