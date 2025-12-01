@@ -5,23 +5,22 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/IBM/sarama"
-	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	"google.golang.org/protobuf/proto"
 	"github.com/rajeev-chaurasia/voltstream/internal/config"
+	"github.com/rajeev-chaurasia/voltstream/internal/storage"
 	pb "github.com/rajeev-chaurasia/voltstream/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 func main() {
 	cfg := config.Load()
 
-	client := influxdb2.NewClient(cfg.InfluxDBURL, cfg.InfluxDBToken)
-	writeAPI := client.WriteAPI(cfg.InfluxDBOrg, cfg.InfluxDBBucket)
+	store := storage.NewInfluxStore(cfg.InfluxDBURL, cfg.InfluxDBToken, cfg.InfluxDBOrg, cfg.InfluxDBBucket)
+	defer store.Close()
 
 	go func() {
-		for err := range writeAPI.Errors() {
+		for err := range store.Errors() {
 			log.Printf("InfluxDB write error: %v", err)
 		}
 	}()
@@ -57,15 +56,8 @@ func main() {
 				continue
 			}
 
-			ts := time.UnixMilli(batch.Timestamp)
-			for _, dp := range batch.Points {
-				p := influxdb2.NewPoint(
-					"telemetry",
-					map[string]string{"vin": batch.VehicleId, "sensor_id": dp.SensorId},
-					map[string]interface{}{"value": dp.Value},
-					ts,
-				)
-				writeAPI.WritePoint(p)
+			if err := store.WriteBatch(&batch); err != nil {
+				log.Printf("InfluxDB write failed: %v", err)
 			}
 
 		case err := <-partitionConsumer.Errors():
@@ -73,8 +65,7 @@ func main() {
 
 		case <-sigchan:
 			log.Println("Graceful shutdown initiated")
-			writeAPI.Flush()
-			client.Close()
+			store.Flush()
 			return
 		}
 	}

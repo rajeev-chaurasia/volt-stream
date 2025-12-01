@@ -1,23 +1,21 @@
 package storage
 
 import (
-	"context"
 	"time"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
-	"github.com/influxdata/influxdb-client-go/v2/api/write"
 	pb "github.com/rajeev-chaurasia/voltstream/proto"
 )
 
 type InfluxStore struct {
 	client   influxdb2.Client
-	writeAPI api.WriteAPIBlocking
+	writeAPI api.WriteAPI
 }
 
 func NewInfluxStore(url, token, org, bucket string) *InfluxStore {
 	client := influxdb2.NewClient(url, token)
-	writeAPI := client.WriteAPIBlocking(org, bucket)
+	writeAPI := client.WriteAPI(org, bucket)
 	return &InfluxStore{
 		client:   client,
 		writeAPI: writeAPI,
@@ -30,25 +28,28 @@ func (s *InfluxStore) WriteBatch(batch *pb.TelemetryBatch) error {
 		p := influxdb2.NewPoint(
 			"telemetry",
 			map[string]string{
-				"vehicle_id": batch.VehicleId,
-				"sensor_id":  point.SensorId,
+				"vin":       batch.VehicleId,
+				"sensor_id": point.SensorId,
 			},
 			map[string]interface{}{
 				"value": point.Value,
 			},
 			timestamp,
 		)
-		if err := s.writeAPI.WritePoint(context.Background(), p); err != nil {
-			return err
-		}
+		s.writeAPI.WritePoint(p)
 	}
 	return nil
 }
 
-func (s *InfluxStore) Close() {
-	s.client.Close()
+func (s *InfluxStore) Errors() <-chan error {
+	return s.writeAPI.Errors()
 }
 
-func (s *InfluxStore) WritePoint(p *write.Point) error {
-	return s.writeAPI.WritePoint(context.Background(), p)
+func (s *InfluxStore) Flush() {
+	s.writeAPI.Flush()
+}
+
+func (s *InfluxStore) Close() {
+	s.writeAPI.Flush()
+	s.client.Close()
 }
