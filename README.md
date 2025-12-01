@@ -1,34 +1,45 @@
 # VoltStream ⚡
 
-High-performance vehicle telemetry ingestion and monitoring system for electric vehicle fleets.
+> **Real-time Electric Vehicle Fleet Monitoring System**
 
-> **🌐 Live Demo:** [voltstream.vercel.app](https://voltstream.vercel.app) (Demo mode with simulated data)  
-> **📹 Full System Video:** [Watch on YouTube](#) (1000 vehicles running locally)
-
-## 🎯 Deployment Strategy
-
-This project demonstrates production-grade microservices architecture and can be run in two modes:
-
-### **Local Development (Full Stack)**
-Run the complete system on your machine:
-- ✅ All Go microservices (gRPC, workers, simulator)
-- ✅ Apache Kafka + InfluxDB
-- ✅ 1000 simulated vehicles @ 10Hz
-- ✅ Real-time dashboard with live data
-- ✅ **Perfect for:** Development, testing, showcasing full capabilities
-
-### **Production (Demo Mode)**
-Deployed to Vercel with realistic simulated data:
-- ✅ Beautiful Next.js dashboard  
-- ✅ Realistic vehicle tracking and telemetry
-- ✅ Live alerts and charts
-- ✅ Zero cost, always available
-- ✅ **Perfect for:** Portfolio, sharing with recruiters, demonstrations
-
-**Why this approach?**  
-Running Kafka + InfluxDB + microservices 24/7 on free tiers costs $20-50/month. Demo mode provides an identical user experience at $0/month, while the GitHub repository demonstrates full production code, architecture, and capabilities.
+High-performance vehicle telemetry ingestion and monitoring system demonstrating production-grade microservices architecture.
 
 ---
+
+## 🌐 Live Demo
+
+**Production Dashboard:** [voltstream.vercel.app](https://voltstream.vercel.app)  
+> ⚠️ **Note:** Live demo runs in **simulation mode** with realistic SF Bay Area vehicle data for zero-cost deployment
+
+**GitHub:** [github.com/rajeev-chaurasia/volt-stream](https://github.com/rajeev-chaurasia/volt-stream)
+
+**Demo Video:** [Full System Running (Coming Soon)](#)
+
+---
+
+## 🎯 Two Deployment Modes
+
+This project is designed to run in two configurations:
+
+### 📱 Production (Vercel - Demo Mode)
+**What you see on the live demo:**
+- Next.js dashboard with realistic simulated data
+- 50 vehicles in SF Bay Area
+- Real-time charts, maps, and alerts
+- **Data Source:** Simulated (see `dashboard-ui/lib/demo-data.ts`)
+- **Cost:** $0/month
+- **Purpose:** Portfolio showcase, recruiters, sharing
+
+### 💻 Local (Full Stack - Real Backend)
+**What runs on your machine:**
+- Complete microservices architecture
+- Apache Kafka + InfluxDB + gRPC
+- 1000 vehicles at 10Hz (10,000 events/sec)
+- **Data Source:** Real Kafka streams from simulator
+- **Cost:** $0 (runs locally)
+- **Purpose:** Development, testing, demonstrating full capabilities
+
+> **Why this approach?** Running Kafka + InfluxDB + microservices 24/7 on cloud platforms costs $20-50/month. Demo mode provides an identical user experience at zero cost while maintaining the complete production codebase for local development.
 
 ## Overview
 

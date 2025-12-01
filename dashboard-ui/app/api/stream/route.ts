@@ -1,3 +1,16 @@
+/**
+ * Server-Sent Events (SSE) endpoint for real-time telemetry data
+ * 
+ * PRODUCTION MODE (Vercel):
+ * - Uses simulated data from demo-data.ts
+ * - Generates realistic SF Bay Area vehicle movements
+ * - Zero external dependencies, works on free tier
+ * 
+ * LOCAL MODE:
+ * - For local development, replace this with Kafka consumer
+ * - See dashboard-ui/README.md for switching to real backend
+ */
+
 import { generateDemoTelemetry, generateDemoAlert } from '@/lib/demo-data';
 
 export const dynamic = 'force-dynamic';
