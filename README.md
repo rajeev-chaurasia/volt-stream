@@ -2,6 +2,34 @@
 
 High-performance vehicle telemetry ingestion and monitoring system for electric vehicle fleets.
 
+> **🌐 Live Demo:** [voltstream.vercel.app](https://voltstream.vercel.app) (Demo mode with simulated data)  
+> **📹 Full System Video:** [Watch on YouTube](#) (1000 vehicles running locally)
+
+## 🎯 Deployment Strategy
+
+This project demonstrates production-grade microservices architecture and can be run in two modes:
+
+### **Local Development (Full Stack)**
+Run the complete system on your machine:
+- ✅ All Go microservices (gRPC, workers, simulator)
+- ✅ Apache Kafka + InfluxDB
+- ✅ 1000 simulated vehicles @ 10Hz
+- ✅ Real-time dashboard with live data
+- ✅ **Perfect for:** Development, testing, showcasing full capabilities
+
+### **Production (Demo Mode)**
+Deployed to Vercel with realistic simulated data:
+- ✅ Beautiful Next.js dashboard  
+- ✅ Realistic vehicle tracking and telemetry
+- ✅ Live alerts and charts
+- ✅ Zero cost, always available
+- ✅ **Perfect for:** Portfolio, sharing with recruiters, demonstrations
+
+**Why this approach?**  
+Running Kafka + InfluxDB + microservices 24/7 on free tiers costs $20-50/month. Demo mode provides an identical user experience at $0/month, while the GitHub repository demonstrates full production code, architecture, and capabilities.
+
+---
+
 ## Overview
 
 VoltStream processes 10,000+ telemetry events per second from 1,000 simulated vehicles, demonstrating a production-ready microservices architecture with real-time visualization. Built with Go, gRPC, Apache Kafka, InfluxDB, and Next.js.
@@ -146,9 +174,42 @@ npm run dev
 
 Access dashboard at http://localhost:3000
 
-### Production Deployment
+## Production Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed production setup with Docker and Kubernetes.
+Deploy the dashboard with demo mode to Vercel (free, instant):
+
+```bash
+cd dashboard-ui
+npm install -g vercel
+vercel --prod
+```
+
+The dashboard will be live at `your-project.vercel.app` with realistic simulated vehicle data.
+
+**What's deployed:**
+- Next.js dashboard with Server-Sent Events
+- 50 simulated vehicles with realistic movement
+- Live charts, alerts, and geospatial tracking
+- Professional UI indistinguishable from production backend
+
+**For recruiters/demos:**
+1. Share the live Vercel URL
+2. Optionally run full stack locally to show capabilities
+3. Point to this GitHub repo for architecture review
+
+---
+
+## License
+
+MIT
+
+## Author
+
+Rajeev Chaurasia  
+- GitHub: [@rajeev-chaurasia](https://github.com/rajeev-chaurasia)
+- Email: rajeevchaurasia.dev@gmail.com
+
+For detailed production setup with Docker and Kubernetes:
 
 ```bash
 docker-compose -f docker-compose.prod.yml up -d
