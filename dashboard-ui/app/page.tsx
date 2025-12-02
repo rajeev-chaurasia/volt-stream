@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import MetricsBar from '@/components/MetricsBar';
 import TelemetryChart from '@/components/TelemetryChart';
 import AlertFeed from '@/components/AlertFeed';
@@ -23,6 +24,11 @@ export default function DashboardPage() {
   const updateThrottleRef = useRef<number>(0);
   const chartUpdateRef = useRef<number>(0);
 
+  // Production: Bounded collections prevent memory leaks
+  const MAX_ALERTS = 100;
+  const MAX_VEHICLES_DISPLAY = 1000;
+  const VEHICLE_TIMEOUT = 60000; // Remove vehicles not seen in 60s
+
   useEffect(() => {
     const es = new EventSource('/api/stream');
     eventSourceRef.current = es;
@@ -38,7 +44,7 @@ export default function DashboardPage() {
         eventCounterRef.current += 1;
 
         const now = Date.now();
-        
+
         setVehicles(prev => {
           const next = new Map(prev);
           next.set(data.vin, {
@@ -66,7 +72,8 @@ export default function DashboardPage() {
     es.addEventListener('alert', (e: MessageEvent) => {
       try {
         const alert: Alert = JSON.parse(e.data);
-        setAlerts(prev => [alert, ...prev].slice(0, 50));
+        // Production: Strict limit to prevent memory leak
+        setAlerts(prev => [alert, ...prev].slice(0, MAX_ALERTS));
       } catch (err) {
         console.error('Alert parse error:', err);
       }
@@ -77,14 +84,34 @@ export default function DashboardPage() {
       console.error('Stream connection lost');
     };
 
-    const interval = setInterval(() => {
+    const statsInterval = setInterval(() => {
       setEventCount(eventCounterRef.current);
       eventCounterRef.current = 0;
     }, 1000);
 
+    // Production: Clean up stale vehicles every 30 seconds
+    const cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      setVehicles(prev => {
+        const next = new Map(prev);
+        let removed = 0;
+        for (const [vin, vehicle] of next.entries()) {
+          if (now - vehicle.lastUpdate > VEHICLE_TIMEOUT) {
+            next.delete(vin);
+            removed++;
+          }
+        }
+        if (removed > 0) {
+          console.log(`Cleaned up ${removed} stale vehicles`);
+        }
+        return next;
+      });
+    }, 30000);
+
     return () => {
       es.close();
-      clearInterval(interval);
+      clearInterval(statsInterval);
+      clearInterval(cleanupInterval);
     };
   }, []);
 
@@ -94,7 +121,28 @@ export default function DashboardPage() {
 
   return (
     <div className="h-screen flex flex-col bg-slate-900">
-      {/* Header */}
+      {/* Header with Navigation */}
+      <header className="bg-slate-800/50 backdrop-blur border-b border-slate-700 px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <h1 className="text-xl font-bold text-white">VOLTSTREAM</h1>
+          <div className="flex gap-2">
+            <span className="px-3 py-1 bg-cyan-600 text-white text-sm font-medium rounded">
+              Live Dashboard
+            </span>
+            <Link 
+              href="/analytics" 
+              className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white text-sm font-medium rounded transition"
+            >
+              Analytics →
+            </Link>
+          </div>
+        </div>
+        <div className="text-xs text-slate-400">
+          Real-time Fleet Monitoring
+        </div>
+      </header>
+
+      {/* Metrics Bar */}
       <MetricsBar
         activeVehicles={activeVehicles}
         avgSpeed={avgSpeed}

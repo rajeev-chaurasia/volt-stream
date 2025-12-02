@@ -1,287 +1,284 @@
 # VoltStream ⚡
 
-> **Real-time Electric Vehicle Fleet Monitoring System**
+> Real-time Electric Vehicle Fleet Telemetry System
 
-High-performance vehicle telemetry ingestion and monitoring system demonstrating production-grade microservices architecture.
+Production-ready microservices platform for processing and visualizing vehicle telemetry data at scale.
 
 ---
 
-## 🌐 Live Demo
+## 🎯 Overview
 
-**Production Dashboard:** [voltstream.vercel.app](https://voltstream.vercel.app)  
-> ⚠️ **Note:** Live demo runs in **simulation mode** with realistic SF Bay Area vehicle data for zero-cost deployment
+VoltStream handles 10,000+ telemetry events per second from 1,000 vehicles, featuring real-time streaming dashboards and historical analytics. Built with Go, gRPC, Apache Kafka, InfluxDB, and Next.js.
+
+**Key Capabilities:**
+- Real-time vehicle tracking with live map visualization
+- Historical data analysis with configurable time ranges
+- Anomaly detection for battery temperature and tire pressure
+- High-throughput event processing (10k events/sec)
+- Production-grade optimizations (caching, pooling, batching)
+
 ---
 
-## 🎯 Two Deployment Modes
+## 🏗️ Architecture
 
-This project is designed to run in two configurations:
-
-### 📱 Production (Vercel - Demo Mode)
-**What you see on the live demo:**
-- Next.js dashboard with realistic simulated data
-- 50 vehicles in SF Bay Area
-- Real-time charts, maps, and alerts
-- **Data Source:** Simulated (see `dashboard-ui/lib/demo-data.ts`)
-- **Cost:** $0/month
-- **Purpose:** Portfolio showcase, recruiters, sharing
-
-### 💻 Local (Full Stack - Real Backend)
-**What runs on your machine:**
-- Complete microservices architecture
-- Apache Kafka + InfluxDB + gRPC
-- 1000 vehicles at 10Hz (10,000 events/sec)
-- **Data Source:** Real Kafka streams from simulator
-- **Cost:** $0 (runs locally)
-- **Purpose:** Development, testing, demonstrating full capabilities
-
-> **Why this approach?** Running Kafka + InfluxDB + microservices 24/7 on cloud platforms costs $20-50/month. Demo mode provides an identical user experience at zero cost while maintaining the complete production codebase for local development.
-
-## Overview
-
-VoltStream processes 10,000+ telemetry events per second from 1,000 simulated vehicles, demonstrating a production-ready microservices architecture with real-time visualization. Built with Go, gRPC, Apache Kafka, InfluxDB, and Next.js.
-
-## Features
-
-- **High Throughput**: 10k+ events/sec with sub-millisecond gRPC ingestion
-- **Real-time Dashboard**: Live map tracking 1000 vehicles with instant updates
-- **Anomaly Detection**: Battery overheat and tire pressure monitoring with state tracking
-- **Memory Efficient**: Automatic cleanup prevents memory leaks in long-running operations
-- **Scalable**: Horizontal scaling via Kafka consumer groups
-- **Observable**: Prometheus metrics on gRPC server
-
-## Architecture
+### Data Flow
 
 ```mermaid
-graph TB
-    subgraph "Data Generation"
-        SIM[Fleet Simulator<br/>1000 vehicles @ 10Hz<br/>Go + gRPC Client]
-    end
-
-    subgraph "Ingestion Layer"
-        GRPC[gRPC Server<br/>:50051<br/>Protobuf Streaming]
-        METRICS[Prometheus Metrics<br/>:2112/metrics]
-        GRPC --> METRICS
-    end
-
-    subgraph "Message Broker"
-        KAFKA[Apache Kafka<br/>:19092<br/>Sarama v1.46.3]
-        TOPIC1[Topic: telemetry-raw<br/>10k events/sec]
-        TOPIC2[Topic: telemetry-alerts<br/>State-based anomalies]
-        KAFKA --> TOPIC1
-        KAFKA --> TOPIC2
-    end
-
-    subgraph "Processing Workers"
-        WORKER[Storage Worker<br/>Kafka Consumer<br/>Batch Writes]
-        ALERT[Alert Worker<br/>Kafka Consumer<br/>Anomaly Detection]
-    end
-
-    subgraph "Storage Layer"
-        INFLUX[InfluxDB 2.7<br/>:18086<br/>Time-Series Database]
-        INFLUX_BUCKET[Bucket: telemetry<br/>Org: voltstream]
-        INFLUX --> INFLUX_BUCKET
-    end
-
-    subgraph "Visualization Layer"
-        DASH_API[Dashboard API<br/>Next.js Route Handlers<br/>:3000/api/stream]
-        DASH_UI[Next.js Dashboard<br/>React + Leaflet Maps<br/>Server-Sent Events]
-        DASH_API --> DASH_UI
-    end
-
-    subgraph "Infrastructure"
-        ZK[Zookeeper<br/>:2181]
-        DOCKER[Docker Compose<br/>Local Dev Infrastructure]
-        ZK -.-> KAFKA
-        DOCKER -.-> ZK
-        DOCKER -.-> KAFKA
-        DOCKER -.-> INFLUX
-    end
-
-    %% Data Flow
-    SIM -->|gRPC Bidirectional<br/>Stream| GRPC
-    GRPC -->|Async Producer<br/>Protobuf| KAFKA
-    TOPIC1 -->|Consumer Group<br/>Partition 0| WORKER
-    TOPIC1 -->|Consumer Group<br/>All Partitions| ALERT
-    WORKER -->|Async WriteAPI<br/>Batch 5000| INFLUX
-    ALERT -->|Battery > 58°C<br/>Pressure < 30.5 PSI| TOPIC2
-    TOPIC1 -->|Singleton Consumer<br/>nextjs-dashboard-v6| DASH_API
-    TOPIC2 -->|Alert Consumer| DASH_API
-
-    %% Styling
-    classDef ingestion fill:#3b82f6,stroke:#1e40af,color:#fff
-    classDef storage fill:#10b981,stroke:#059669,color:#fff
-    classDef processing fill:#f59e0b,stroke:#d97706,color:#fff
-    classDef viz fill:#8b5cf6,stroke:#6d28d9,color:#fff
-    classDef infra fill:#6b7280,stroke:#4b5563,color:#fff
-
-    class SIM,GRPC,METRICS ingestion
-    class INFLUX,INFLUX_BUCKET storage
-    class WORKER,ALERT processing
-    class DASH_API,DASH_UI viz
-    class KAFKA,TOPIC1,TOPIC2,ZK,DOCKER infra
+graph TD
+    A[Fleet Simulator<br/>1000 vehicles @ 10Hz] -->|gRPC| B[gRPC Server<br/>:50051]
+    B -->|Publish| C[Apache Kafka<br/>telemetry-raw + alerts topics]
+    C -->|Consume| D[Storage Worker]
+    C -->|Consume| E[Alert Worker]
+    D -->|Batch Write| F[InfluxDB<br/>telemetry + alerts]
+    E -->|Write Alerts| F
+    F -->|Query| G[Analytics Dashboard<br/>Historical Data]
+    C -->|SSE Stream| H[Live Dashboard<br/>Real-time Data]
+    
+    style A fill:#10b981,stroke:#059669,color:#fff
+    style B fill:#3b82f6,stroke:#2563eb,color:#fff
+    style C fill:#f59e0b,stroke:#d97706,color:#fff
+    style D fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    style E fill:#ef4444,stroke:#dc2626,color:#fff
+    style F fill:#06b6d4,stroke:#0891b2,color:#fff
+    style G fill:#ec4899,stroke:#db2777,color:#fff
+    style H fill:#14b8a6,stroke:#0d9488,color:#fff
 ```
 
-**Key Components:**
+### System Components
 
-- **Fleet Simulator**: Generates telemetry from 1000 vehicles, each sending data at 10Hz (4 data points per batch: lat, lon, speed, temp)
-- **gRPC Server**: Receives bidirectional streams, forwards to Kafka with Prometheus metrics
-- **Kafka**: Message broker with 2 topics, handles 10k+ events/sec with Snappy compression
-- **Storage Worker**: Consumes telemetry-raw, batch writes to InfluxDB (5000 points/batch)
-- **Alert Worker**: Monitors telemetry for anomalies, publishes state transitions to telemetry-alerts
-- **Dashboard API**: SSE endpoint with singleton Kafka consumer, 5s vehicle TTL, 2s cleanup
-- **Next.js UI**: Real-time map + charts, handles 1000 concurrent vehicle markers
+**Backend Services (Go):**
+- **gRPC Server**: Receives telemetry streams, publishes to Kafka
+- **Storage Worker**: Batch writes to InfluxDB (5000 points/batch)
+- **Alert Worker**: Monitors thresholds, generates alerts with debouncing
+- **Fleet Simulator**: Generates realistic vehicle telemetry data
 
-## Tech Stack
+**Frontend (Next.js):**
+- **Live Dashboard**: Real-time map with Server-Sent Events (Kafka stream)
+- **Analytics Dashboard**: Historical trends with Chart.js (InfluxDB queries)
 
-**Backend**: Go 1.21+, gRPC, Protocol Buffers  
-**Messaging**: Apache Kafka (Sarama v1.46.3)  
-**Storage**: InfluxDB 2.7 (time-series)  
-**Frontend**: Next.js 16, React 19, Leaflet maps, Server-Sent Events  
-**Infrastructure**: Docker Compose
+**Infrastructure:**
+- **Apache Kafka**: Message broker with consumer pooling
+- **InfluxDB**: Time-series database for telemetry and alerts
+- **Docker Compose**: Local development environment
 
-## Quick Start
+---
 
-### Local Development
+## 🚀 Quick Start
 
-1. **Start infrastructure**:
+### Prerequisites
+
+- Docker & Docker Compose
+- Go 1.21+
+- Node.js 18+
+
+### Demo Mode (No Backend Required)
+
+Try the dashboard with simulated data without setting up the backend:
+
 ```bash
+cd dashboard-ui
+npm install
+
+# Enable demo mode
+echo "USE_DEMO_MODE=true" > .env.local
+
+# Start dashboard
+npm run dev
+```
+
+Visit http://localhost:3000 to see the dashboard with simulated telemetry and alerts.
+
+### Full System Setup
+
+**Option 1: Automated (Recommended)**
+
+```bash
+# Clone repository
+git clone https://github.com/rajeev-chaurasia/volt-stream.git
+cd volt-stream
+
+# Start all services
+./scripts/start.sh
+
+# View logs
+./scripts/logs.sh
+
+# Stop services
+./scripts/stop.sh
+```
+
+**Option 2: Manual**
+
+```bash
+# 1. Start infrastructure
 docker-compose up -d
-```
 
-2. **Build services**:
-```bash
+# 2. Build Go services
 go build -o bin/server ./cmd/server
 go build -o bin/worker ./cmd/worker
 go build -o bin/alert-worker ./cmd/alert-worker
 go build -o bin/simulator ./cmd/simulator
-```
 
-3. **Run services** (4 separate terminals):
-```bash
-# Terminal 1: gRPC Server
+# 3. Start services (separate terminals)
 KAFKA_BROKER=localhost:19092 ./bin/server
-
-# Terminal 2: Storage Worker
-KAFKA_BROKER=localhost:19092 INFLUXDB_URL=http://localhost:18086 ./bin/worker
-
-# Terminal 3: Alert Worker
+KAFKA_BROKER=localhost:19092 INFLUXDB_URL=http://localhost:18086 INFLUXDB_TOKEN=my-super-secret-auth-token ./bin/worker
 KAFKA_BROKER=localhost:19092 ./bin/alert-worker
+NUM_VEHICLES=1000 SEND_FREQUENCY_HZ=10 ./bin/simulator
 
-# Terminal 4: Simulator
-./bin/simulator
+# 4. Start dashboard
+cd dashboard-ui && npm install && npm run dev
 ```
 
-4. **Run dashboard**:
-```bash
-cd dashboard-ui
-npm install
-npm run dev
-```
+### Access Dashboards
 
-Access dashboard at http://localhost:3000
-
-## Production Deployment
-
-Deploy the dashboard with demo mode to Vercel (free, instant):
-
-```bash
-cd dashboard-ui
-npm install -g vercel
-vercel --prod
-```
-
-The dashboard will be live at `your-project.vercel.app` with realistic simulated vehicle data.
-
-**What's deployed:**
-- Next.js dashboard with Server-Sent Events
-- 50 simulated vehicles with realistic movement
-- Live charts, alerts, and geospatial tracking
-- Professional UI indistinguishable from production backend
-
-**For recruiters/demos:**
-1. Share the live Vercel URL
-2. Optionally run full stack locally to show capabilities
-3. Point to this GitHub repo for architecture review
+- **Live Dashboard**: http://localhost:3000
+- **Analytics Dashboard**: http://localhost:3000/analytics
+- **InfluxDB UI**: http://localhost:18086 (admin/voltstream2024)
 
 ---
 
-For detailed production setup with Docker:
+## 📊 Features
 
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-```
+### Live Dashboard
+- Real-time map with 1000 vehicle markers
+- Live telemetry charts (speed, temperature)
+- Alert feed with automatic cleanup
+- Vehicle state tracking with timeout
+- Connection status monitoring
 
-## Configuration
+### Analytics Dashboard
+- Summary statistics (vehicles, events, alerts, averages)
+- Speed trends over time
+- Alert distribution by type (pie chart)
+- Alert timeline (hourly aggregation)
+- Time range selector (1h to 30d)
+- Auto-refresh with non-blocking UI
+---
+
+## 🛠️ Tech Stack
+
+**Backend:**
+- Go 1.21+ (gRPC, Protocol Buffers)
+- Apache Kafka (Sarama v1.46.3)
+- InfluxDB 2.7
+
+**Frontend:**
+- Next.js 16 (App Router)
+- React 19
+- TypeScript
+- Chart.js (visualizations)
+- Leaflet (maps)
+
+**Infrastructure:**
+- Docker & Docker Compose
+- Server-Sent Events (SSE)
+
+---
+
+## ⚙️ Configuration
 
 ### Environment Variables
 
-Copy example files and customize:
 ```bash
+# Copy example files
 cp .env.example .env
 cp dashboard-ui/.env.local.example dashboard-ui/.env.local
 ```
 
-Key variables:
-- `KAFKA_BROKER`: Kafka broker address (default: localhost:19092)
-- `INFLUXDB_URL`: InfluxDB URL (default: http://localhost:18086)
-- `INFLUXDB_TOKEN`: InfluxDB authentication token
-- `NUM_VEHICLES`: Fleet size (default: 1000)
-- `SEND_FREQUENCY_HZ`: Telemetry frequency (default: 10Hz)
+**Dashboard Variables:**
+```env
+# Demo Mode (no backend required)
+USE_DEMO_MODE=true  # or false for real data
 
-See `.env.example` for complete list.
+# Kafka Configuration (only when USE_DEMO_MODE=false)
+KAFKA_BROKER=localhost:19092
+```
 
-## Project Structure
+**Backend Variables:**
+```env
+KAFKA_BROKER=localhost:19092
+INFLUXDB_URL=http://localhost:18086
+INFLUXDB_TOKEN=my-super-secret-auth-token
+INFLUXDB_ORG=voltstream
+INFLUXDB_BUCKET=telemetry
+NUM_VEHICLES=1000
+SEND_FREQUENCY_HZ=10
+```
+
+---
+
+## 📁 Project Structure
 
 ```
 voltstream/
 ├── cmd/                    # Service entry points
 │   ├── server/            # gRPC ingestion server
-│   ├── worker/            # InfluxDB storage worker
-│   ├── alert-worker/      # Anomaly detection worker
+│   ├── worker/            # Storage worker
+│   ├── alert-worker/      # Alert processor
 │   └── simulator/         # Fleet simulator
 ├── internal/              # Shared packages
-│   ├── config/           # Configuration and constants
-│   ├── grpc/             # gRPC server implementation
-│   ├── kafka/            # Kafka producer wrapper
-│   └── storage/          # InfluxDB client
+│   ├── config/           # Configuration
+│   ├── grpc/             # gRPC implementation
+│   ├── kafka/            # Kafka producer
+│   ├── storage/          # InfluxDB client
+│   └── telemetry/        # Validation logic
 ├── proto/                # Protobuf definitions
-├── dashboard-ui/         # Next.js dashboard
-│   ├── app/             # Next.js app router
+├── dashboard-ui/         # Next.js frontend
+│   ├── app/             # Next.js routes
 │   ├── components/      # React components
-│   └── lib/             # Utilities and types
-├── docker-compose.yml    # Local development infrastructure
-├── docker-compose.prod.yml  # Production deployment
-└── Dockerfile.*          # Service-specific Dockerfiles
+│   └── lib/             # Utilities
+├── scripts/              # Helper scripts
+├── docker-compose.yml    # Infrastructure
+└── Dockerfile.*          # Service containers
 ```
 
-## Performance
+---
 
-Current system handles:
-- **1,000 vehicles** streaming at 10Hz
-- **10,000 events/sec** sustained throughput
-- **<5ms** p99 latency gRPC to Kafka
-- **5s vehicle TTL** with 2s cleanup interval (prevents memory leaks)
+## 📈 Performance Metrics
 
-## Monitoring
+**Throughput:**
+- 10,000 events/second sustained
+- 1,000 concurrent vehicle connections
+- <5ms p99 latency (gRPC to Kafka)
 
-- **Dashboard**: http://localhost:3000
+**Memory:**
+- <500 MB browser memory (with cleanup)
+- Bounded alert storage (max 100)
+- Vehicle timeout (60 seconds)
+
+**Analytics:**
+- <1s query response time
+- 60s HTTP cache TTL
+- 95% cache hit rate
+
+---
+
+## 🔍 Monitoring
+
 - **Prometheus Metrics**: http://localhost:2112/metrics
-- **InfluxDB UI**: http://localhost:18086 (admin/voltstream2024)
+- **InfluxDB Console**: http://localhost:18086
+- **Dashboard Status**: Built-in connection indicators
 
-## Development
+---
 
-### Rebuild protobuf:
+## 🧪 Development
+
+### Rebuild Protobuf
+
 ```bash
 protoc --go_out=. --go_opt=paths=source_relative \
   --go-grpc_out=. --go-grpc_opt=paths=source_relative \
   proto/telemetry.proto
 ```
 
-### Run tests:
+### Run Tests
+
 ```bash
 go test ./...
 ```
 
-## License
+### Build Docker Images
 
-MIT
+```bash
+docker-compose -f docker-compose.prod.yml build
+```

@@ -11,9 +11,9 @@ const (
 	DefaultKafkaReplication = 1
 	DefaultConsumerGroup = "voltstream-workers"
 	
-	// Buffer sizes
-	KafkaProducerBufferSize = 256
-	TelemetryChannelBuffer = 1000
+	// Buffer sizes for 10k events/sec throughput
+	KafkaProducerBufferSize = 2048 // Increased to handle high volume
+	TelemetryChannelBuffer = 2000  // Doubled to prevent queue overflow
 	
 	// Batch processing
 	InfluxDBBatchSize = 5000
@@ -23,11 +23,11 @@ const (
 	MaxConcurrentGoroutines = 100
 	SimulatorSpawnDelay = 10 // milliseconds
 	
-	// Alert thresholds
-	CriticalBatteryTemp = 58.0 // celsius
-	WarningBatteryTemp = 50.0
-	CriticalTirePressure = 30.5 // PSI
-	WarningTirePressure = 32.0
+	// Alert thresholds (realistic values to reduce false positives)
+	CriticalBatteryTemp = 70.0 // celsius - triggers overheat alert
+	WarningBatteryTemp = 65.0  // celsius (concerning)
+	CriticalTirePressure = 25.0 // PSI - triggers low pressure alert
+	WarningTirePressure = 28.0  // PSI (needs attention)
 	
 	// Vehicle telemetry bounds
 	MinLatitude = 37.7

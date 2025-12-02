@@ -1,145 +1,137 @@
-// San Francisco Bay Area - realistic EV fleet deployment zones
-const SF_BAY_ZONES = [
-    { name: 'Downtown SF', lat: 37.7749, lon: -122.4194 },
-    { name: 'Mission District', lat: 37.7599, lon: -122.4148 },
-    { name: 'SoMa', lat: 37.7786, lon: -122.3893 },
-    { name: 'Marina', lat: 37.8043, lon: -122.4376 },
-    { name: 'Financial District', lat: 37.7946, lon: -122.4014 },
-    { name: 'Embarcadero', lat: 37.7955, lon: -122.3937 },
-    { name: 'Oakland Downtown', lat: 37.8044, lon: -122.2712 },
-    { name: 'Berkeley', lat: 37.8715, lon: -122.2730 },
-    { name: 'Palo Alto', lat: 37.4419, lon: -122.1430 },
-    { name: 'San Jose', lat: 37.3382, lon: -121.8863 },
-];
+/**
+ * Demo Mode Data Generator
+ * 
+ * Generates simulated telemetry and analytics data when USE_DEMO_MODE=true
+ * Used for demos and testing without requiring backend infrastructure
+ */
 
-// Track vehicle states for realistic movement
-const vehicleStates = new Map<string, {
-    zone: typeof SF_BAY_ZONES[0];
-    lat: number;
-    lon: number;
-    speed: number;
-    temp: number;
-    lastUpdate: number;
-}>();
-
-export function generateDemoTelemetry() {
-    // Generate consistent VIN (50 vehicles in fleet)
-    const vehicleIndex = Math.floor(Math.random() * 50);
-    const vin = `VIN${vehicleIndex.toString().padStart(3, '0')}`;
-
-    // Get or initialize vehicle state
-    let state = vehicleStates.get(vin);
-
-    if (!state || Date.now() - state.lastUpdate > 60000) {
-        // New vehicle or reset after 1 minute - assign to a random zone
-        const zone = SF_BAY_ZONES[Math.floor(Math.random() * SF_BAY_ZONES.length)];
-        state = {
-            zone,
-            lat: zone.lat + (Math.random() - 0.5) * 0.01, // ~0.5 mile radius
-            lon: zone.lon + (Math.random() - 0.5) * 0.01,
-            speed: Math.random() < 0.3 ? 0 : 20 + Math.random() * 40, // 30% stopped
-            temp: 30 + Math.random() * 15, // 30-45°C normal range
-            lastUpdate: Date.now(),
-        };
-    } else {
-        // Simulate realistic movement
-        const isMoving = state.speed > 5;
-
-        if (isMoving) {
-            // Move vehicle slightly (realistic speed-based displacement)
-            const displacement = (state.speed / 3600) * 0.001; // approximate lat/lon change
-            state.lat += (Math.random() - 0.5) * displacement;
-            state.lon += (Math.random() - 0.5) * displacement;
-
-            // Gradual speed changes
-            state.speed += (Math.random() - 0.5) * 10;
-            state.speed = Math.max(0, Math.min(80, state.speed)); // 0-80 mph
-        } else {
-            // Stopped vehicle - small chance to start moving
-            if (Math.random() < 0.1) {
-                state.speed = 15 + Math.random() * 15;
-            }
-        }
-
-        // Temperature slowly changes with usage
-        if (isMoving) {
-            state.temp += (Math.random() - 0.3) * 2; // Slight warming when moving
-        } else {
-            state.temp -= 0.5; // Cooling when stopped
-        }
-        state.temp = Math.max(25, Math.min(65, state.temp)); // 25-65°C range
-
-        state.lastUpdate = Date.now();
-    }
-
-    vehicleStates.set(vin, state);
-
-    return {
-        vin,
-        lat: state.lat,
-        lon: state.lon,
-        speed: Math.round(state.speed * 10) / 10,
-        temp: Math.round(state.temp * 10) / 10,
-    };
+// Generate random value within range
+function randomInRange(min: number, max: number): number {
+  return Math.random() * (max - min) + min;
 }
 
-export function generateDemoAlert() {
-    const vehicleIndex = Math.floor(Math.random() * 50);
-    const vin = `VIN${vehicleIndex.toString().padStart(3, '0')}`;
+// Generate random integer within range
+function randomInt(min: number, max: number): number {
+  return Math.floor(randomInRange(min, max));
+}
 
-    const state = vehicleStates.get(vin);
+// Generate vehicle positions in San Francisco area
+function generateVehiclePosition(index: number) {
+  const centerLat = 37.7749;
+  const centerLng = -122.4194;
+  const spread = 0.05; // ~5km radius
+  
+  return {
+    lat: centerLat + (Math.random() - 0.5) * spread,
+    lon: centerLng + (Math.random() - 0.5) * spread,
+  };
+}
 
-    // Generate contextual alerts based on actual vehicle state
-    const alerts = [];
+// Generate telemetry data point
+export function generateTelemetryData() {
+  const vehicleId = `DEMO-${randomInt(1, 100)}`;
+  const position = generateVehiclePosition(parseInt(vehicleId.split('-')[1]));
+  
+  return {
+    vin: vehicleId,
+    lat: position.lat,
+    lon: position.lon,
+    speed: randomInRange(30, 120),
+    temp: randomInRange(20, 65),
+  };
+}
 
-    if (state && state.temp > 55) {
-        alerts.push({
-            type: 'BATTERY_OVERHEAT',
-            message: `Battery temperature ${state.temp.toFixed(1)}°C exceeds safe limit`,
-            value: state.temp,
-        });
-    }
+// Generate alert data
+export function generateAlertData() {
+  const alertTypes = [
+    'BATTERY_OVERHEAT',
+    'TIRE_PRESSURE_LOW',
+    'SPEED_LIMIT_EXCEEDED',
+    'BATTERY_CRITICAL',
+  ];
+  
+  return {
+    type: alertTypes[randomInt(0, alertTypes.length)],
+    vehicleId: `DEMO-${randomInt(1, 100)}`,
+    severity: ['WARNING', 'CRITICAL'][randomInt(0, 2)],
+    message: 'Demo alert generated',
+    timestamp: new Date().toISOString(),
+  };
+}
 
-    if (state && state.speed > 75) {
-        alerts.push({
-            type: 'HIGH_SPEED',
-            message: `Vehicle speed ${state.speed.toFixed(1)} mph exceeds limit`,
-            value: state.speed,
-        });
-    }
+// Generate summary statistics
+export function generateSummaryStats() {
+  return {
+    total_vehicles: randomInt(80, 100),
+    total_events: randomInt(10000, 50000),
+    total_alerts: randomInt(50, 200),
+    avg_temp: randomInRange(35, 45),
+    avg_speed: randomInRange(60, 80),
+  };
+}
 
-    // Random low tire pressure (not state-dependent)
-    if (Math.random() < 0.1) {
-        alerts.push({
-            type: 'LOW_TIRE_PRESSURE',
-            message: 'Tire pressure below 30 PSI',
-            value: 25 + Math.random() * 5,
-        });
-    }
+// Generate speed statistics over time
+export function generateSpeedStats(hours: number = 24) {
+  const stats = [];
+  const now = Date.now();
+  const interval = (hours * 60 * 60 * 1000) / 50; // 50 data points
+  
+  for (let i = 0; i < 50; i++) {
+    stats.push({
+      timestamp: new Date(now - (49 - i) * interval).toISOString(),
+      avg_speed: randomInRange(50, 90),
+    });
+  }
+  
+  return stats;
+}
 
-    // Occasional resolved alerts
-    if (Math.random() < 0.2) {
-        alerts.push({
-            type: 'RESOLVED',
-            message: 'Previous alert condition resolved',
-            value: 0,
-        });
-    }
+// Generate alert frequency by type
+export function generateAlertFrequency() {
+  return [
+    { type: 'BATTERY_OVERHEAT', count: randomInt(20, 50) },
+    { type: 'TIRE_PRESSURE_LOW', count: randomInt(10, 30) },
+    { type: 'SPEED_LIMIT_EXCEEDED', count: randomInt(15, 40) },
+    { type: 'BATTERY_CRITICAL', count: randomInt(5, 15) },
+  ];
+}
 
-    // Return random alert from available ones, or generate a generic one
-    const alert = alerts.length > 0
-        ? alerts[Math.floor(Math.random() * alerts.length)]
-        : {
-            type: 'RESOLVED',
-            message: 'All systems nominal',
-            value: 0,
-        };
+// Generate alert distribution over time
+export function generateAlertDistribution(hours: number = 24) {
+  const distribution = [];
+  const now = Date.now();
+  const interval = 60 * 60 * 1000; // 1 hour
+  
+  for (let i = 0; i < Math.min(hours, 168); i++) {
+    distribution.push({
+      hour: new Date(now - (hours - i) * interval).toISOString(),
+      count: randomInt(5, 20),
+    });
+  }
+  
+  return distribution;
+}
 
-    return {
-        vehicle_id: vin,
-        type: alert.type,
-        message: alert.message,
-        value: alert.value,
-        timestamp: Date.now(),
-    };
+// Generate tire pressure statistics
+export function generateTirePressureStats() {
+  return [
+    { vehicle_id: 'DEMO-1', avg_pressure: randomInRange(30, 35) },
+    { vehicle_id: 'DEMO-2', avg_pressure: randomInRange(30, 35) },
+    { vehicle_id: 'DEMO-3', avg_pressure: randomInRange(30, 35) },
+  ];
+}
+
+// Parse time range to hours
+export function parseTimeRangeToHours(timeRange: string): number {
+  const value = parseInt(timeRange.slice(1, -1));
+  const unit = timeRange.slice(-1);
+  
+  switch (unit) {
+    case 'h':
+      return value;
+    case 'd':
+      return value * 24;
+    default:
+      return 1;
+  }
 }

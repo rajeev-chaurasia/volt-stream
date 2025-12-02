@@ -89,7 +89,7 @@ export default function TelemetryChart({ data, label, color, max = 100, threshol
             },
             y: {
                 min: 0,
-                max,
+                max: Math.max(max, threshold || 0, 120), // Ensure chart shows all data
                 grid: {
                     color: '#334155'
                 },

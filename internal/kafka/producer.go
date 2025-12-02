@@ -20,7 +20,9 @@ func NewProducer(brokers []string, topic string) (*Producer, error) {
 	config.Producer.Return.Errors = true
 	config.Producer.RequiredAcks = sarama.WaitForLocal   // Only wait for leader to ack
 	config.Producer.Compression = sarama.CompressionNone // Disable compression for Next.js compatibility
-	config.Producer.Flush.Frequency = 500 * 1000 * 1000  // Flush every 500ms
+	config.Producer.Flush.Frequency = 100 * 1000 * 1000  // Flush every 100ms
+	config.Producer.Flush.Messages = 100                 // Or every 100 messages
+	config.ChannelBufferSize = 2048                      // Increased buffer for high throughput
 
 	producer, err := sarama.NewAsyncProducer(brokers, config)
 	if err != nil {

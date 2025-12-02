@@ -27,31 +27,20 @@ services:
 
   influxdb:
     image: influxdb:2.7
+    container_name: volt-stream-influxdb
     ports:
       - "18086:8086"
     environment:
-      DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: admin
-      DOCKER_INFLUXDB_INIT_PASSWORD: password123
-      DOCKER_INFLUXDB_INIT_ORG: voltstream
-      DOCKER_INFLUXDB_INIT_BUCKET: telemetry
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: my-super-secret-auth-token
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "13000:3000"
-    depends_on:
-      - influxdb
-      - prometheus
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "19090:9090"
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=password123
+      - DOCKER_INFLUXDB_INIT_ORG=voltstream
+      - DOCKER_INFLUXDB_INIT_BUCKET=telemetry
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-auth-token
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - influxdb-data:/var/lib/influxdb2
+
+volumes:
+  kafka-data:
+  zookeeper-data:
+  influxdb-data:

@@ -1,12 +1,47 @@
+# Build artifacts
 bin/
+*.exe
+*.out
+
+# Logs
 *.log
+logs/
+
+# Environment files
 .env
 .env.local
+docker.env
+
+# Node.js
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js
 .next/
-dashboard-ui/.env.local
-dashboard-ui/node_modules/
+out/
 dashboard-ui/.next/
-.DS_Store
+dashboard-ui/out/
+
+# IDE
+.vscode/
+.idea/
 *.swp
 *.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+*.test
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Documentation (generated)
+docs/

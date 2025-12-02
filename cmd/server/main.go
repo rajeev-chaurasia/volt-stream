@@ -3,10 +3,8 @@ package main
 import (
 	"log"
 	"net"
-	"net/http"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 
 	"github.com/rajeev-chaurasia/voltstream/internal/config"
@@ -35,14 +33,6 @@ func main() {
 
 	var wg sync.WaitGroup
 	telemetryServer.StartWorkers(cfg.WorkerPoolSize, &wg)
-
-	go func() {
-		http.Handle("/metrics", promhttp.Handler())
-		log.Println("Prometheus metrics available at :2112/metrics")
-		if err := http.ListenAndServe(":2112", nil); err != nil {
-			log.Fatalf("Metrics server error: %v", err)
-		}
-	}()
 
 	log.Printf("gRPC server listening on %s", cfg.GRPCPort)
 	if err := grpcServer.Serve(lis); err != nil {
